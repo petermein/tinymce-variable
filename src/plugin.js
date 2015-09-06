@@ -10,10 +10,10 @@
 
 /*global tinymce:true */
 
-tinymce.PluginManager.add('variables', function(editor) {
+tinymce.PluginManager.add('variables', function (editor) {
 
     var VK = tinymce.util.VK;
-    var stringVariableRegex = new RegExp('{([a-z. _]*)?}', 'g');
+    var stringVariableRegex = new RegExp('{([a-zA-Z0-9. _]*)?}', 'g');
 
     /**
      * Object that is used to replace the variable string to be used
@@ -37,15 +37,14 @@ tinymce.PluginManager.add('variables', function(editor) {
      * @param {string} name
      * @return {bool}
      */
-    function isValid( name )
-    {
+    function isValid(name) {
 
-        if( ! valid || valid.length === 0 )
+        if (!valid || valid.length === 0)
             return true;
 
         var validString = '|' + valid.join('|') + '|';
 
-        return validString.indexOf( '|' + name + '|' ) > -1 ? true : false;
+        return validString.indexOf('|' + name + '|') > -1 ? true : false;
     }
 
     /**
@@ -54,16 +53,16 @@ tinymce.PluginManager.add('variables', function(editor) {
      * @param  {string} value
      * @return {string}
      */
-    function createHTMLVariable( value ) {
+    function createHTMLVariable(value) {
 
-        var cleanValue = value.replace(/[^a-zA-Z._]/g, "");
+        var cleanValue = value.replace(/[^a-zA-Z0-9._]/g, "");
 
         // check if variable is valid
-        if( ! isValid(cleanValue) )
+        if (!isValid(cleanValue))
             return value;
 
         // map value to a more readable value
-        if( mappers.hasOwnProperty(cleanValue) )
+        if (mappers.hasOwnProperty(cleanValue))
             cleanValue = mappers[cleanValue];
 
         editor.fire('VariableToHTML', {
@@ -78,15 +77,14 @@ tinymce.PluginManager.add('variables', function(editor) {
      * convert variable strings into html elements
      * @return {void}
      */
-    function stringToHTML()
-    {
+    function stringToHTML() {
         var nodeList = [],
             nodeValue,
             node,
             div;
 
         // find nodes that contain a string variable
-        tinymce.walk(editor.getBody(), function(n) {
+        tinymce.walk(editor.getBody(), function (n) {
             if (n.nodeType == 3 && n.nodeValue && stringVariableRegex.test(n.nodeValue)) {
                 nodeList.push(n);
             }
@@ -113,15 +111,14 @@ tinymce.PluginManager.add('variables', function(editor) {
      * for example when a user opens source view
      * @return {void}
      */
-    function htmlToString()
-    {
+    function htmlToString() {
         var nodeList = [],
             nodeValue,
             node,
             div;
 
-            // find nodes that contain a HTML variable
-        tinymce.walk( editor.getBody(), function(n) {
+        // find nodes that contain a HTML variable
+        tinymce.walk(editor.getBody(), function (n) {
             if (n.nodeType == 1) {
                 var original = n.parentElement.getAttribute('data-original-variable');
                 if (original !== null) {
@@ -154,27 +151,28 @@ tinymce.PluginManager.add('variables', function(editor) {
      * @return {string}
      */
     /*Unused Function
-    function getVariable(value) {
-        var variable, cleanVariable;
-        var variablePickRegex = new RegExp('{([a-z. _]*)?}', 'g');
-        var variableCleanRegex = new RegExp('[^a-zA-Z._]', 'g');
-        var matches = value.match( variablePickRegex );
-        var result = {};
+     function getVariable(value) {
+     var variable, cleanVariable;
+     var variablePickRegex = new RegExp('{([a-z. _]*)?}', 'g');
+     var variableCleanRegex = new RegExp('[^a-zA-Z._]', 'g');
+     var matches = value.match( variablePickRegex );
+     var result = {};
 
-        if( matches.length > 0 ) {
-            for( var i = 0; i < matches.length; i++ ) {
-                variable = matches[i];
-                cleanVariable = variable.replace( variableCleanRegex, '');
-                result[ cleanVariable ] = variable;
-            }
-            return result;
-        }
+     if( matches.length > 0 ) {
+     for( var i = 0; i < matches.length; i++ ) {
+     variable = matches[i];
+     cleanVariable = variable.replace( variableCleanRegex, '');
+     result[ cleanVariable ] = variable;
+     }
+     return result;
+     }
 
-        return null;
-    }*/
+     return null;
+     }*/
 
     function setCursor(selector) {
         var ell = editor.dom.select(selector)[0];
+
         var next = ell.nextSibling;
 
         //this.command('mceFocus',false,this.props.name);
@@ -195,19 +193,28 @@ tinymce.PluginManager.add('variables', function(editor) {
         var currentNode = tinymce.activeEditor.selection.getNode();
         var keyCode = e.keyCode;
 
-        if( currentNode.classList.contains('variable') ) {
+        if (currentNode.classList.contains('variable')) {
 
-            if( keyCode === VK.DELETE || keyCode === VK.BACKSPACE ) {
+            if (keyCode === VK.DELETE || keyCode === VK.BACKSPACE) {
                 // user can delete variable nodes
                 editor.fire('VariableDelete', {value: currentNode.nodeValue});
-                editor.dom.remove( currentNode );
-            } else if ( keyCode === VK.SPACEBAR || keyCode === VK.RIGHT || keyCode === VK.TOP || keyCode === VK.BOTTOM ) {
+                editor.dom.remove(currentNode);
+            } else if (keyCode === VK.SPACEBAR || keyCode === VK.TOP || keyCode === VK.BOTTOM) {
                 e.preventDefault();
-                var variable = currentNode.getAttribute('data-original-variable');
-                var t = document.createTextNode(" ");
-                editor.dom.insertAfter(t, currentNode);
-                setCursor('[data-original-variable="' + variable + '"]');
-            } else if( keyCode === VK.LEFT ) {
+
+                var next = currentNode.nextSibling;
+
+                if (next == null) {
+                    var t = document.createTextNode('\u00A0');
+                    editor.dom.insertAfter(t, currentNode);
+                }
+                editor.selection.setCursorLocation(t, 1);
+            } else if (keyCode === VK.RIGHT) {
+
+                var ell = editor.selection.select(currentNode, true);
+                editor.selection.collapse(false);
+
+            } else if (keyCode === VK.LEFT) {
                 // move cursor before variable
             } else {
                 // user can not modify variables
@@ -228,9 +235,9 @@ tinymce.PluginManager.add('variables', function(editor) {
     }
 
 
-    editor.on('nodechange', stringToHTML );
-    editor.on('keyup', stringToHTML );
-    editor.on('keydown', editableHandler );
+    editor.on('nodechange', stringToHTML);
+    editor.on('keyup', stringToHTML);
+    editor.on('keydown', editableHandler);
     editor.on('beforegetcontent', handleContentRerender);
 
 });
