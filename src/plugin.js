@@ -205,7 +205,7 @@ tinymce.PluginManager.add('variables', function (editor) {
                 var next = currentNode.nextSibling;
 
                 if (next == null) {
-                    var t = document.createTextNode('\u00A0');
+                    var t = document.createTextNode('\u0020');
                     editor.dom.insertAfter(t, currentNode);
                 }
                 editor.selection.setCursorLocation(t, 1);
